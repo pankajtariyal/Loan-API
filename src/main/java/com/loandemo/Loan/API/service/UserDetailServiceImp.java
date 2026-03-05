@@ -23,12 +23,12 @@ public class UserDetailServiceImp implements UserDetailsService {
             User user = userOptional.get();
             return org.springframework.security.core.userdetails.User.builder()
                     .username(user.getUsername())
-                    .password(user.getPassword_hash())
+                    .password(user.getPassword())
                     .roles(user.getRole())
                     .build();
         }
         else {
-            throw new UsernameNotFoundException("user nt found 44!");
+            throw new UsernameNotFoundException("user n0t found 44!");
         }
     }
 }

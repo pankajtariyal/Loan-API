@@ -20,13 +20,14 @@ public class JwtUtils {
     public Key getSecretKey(){
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
     }
-    public String generateToken(String username){
+    public String generateToken(String username, String role){
         HashMap<String,Object > claims = new HashMap<>();
+        claims.put("role",role);
         return Jwts.builder()
                 .addClaims(claims)
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis()+60000))
+                .setExpiration(new Date(System.currentTimeMillis()+3600000))
                 .signWith(getSecretKey(),SignatureAlgorithm.HS256)
                 .compact();
     }

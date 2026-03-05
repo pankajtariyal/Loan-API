@@ -1,30 +1,34 @@
 package com.loandemo.Loan.API.controller;
 
-import com.loandemo.Loan.API.modul.User;
-import com.loandemo.Loan.API.modul.UserRequest;
-import com.loandemo.Loan.API.modul.UserResponseDto;
+import com.loandemo.Loan.API.dto.update.PasswordUpdateByUserRequest;
+import com.loandemo.Loan.API.dto.user.UserResponse;
 import com.loandemo.Loan.API.responseapi.APIResponse;
 import com.loandemo.Loan.API.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("user")
 public class UserController {
 
-    @Autowired
-    private UserService service;
+    private final UserService userService;
 
-    @PostMapping("register")
-    public ResponseEntity<APIResponse<UserResponseDto>> registerUser(@RequestBody UserRequest userRequest){
-        return service.createUser(userRequest);
+    public UserController(UserService userService){
+        this.userService = userService;
     }
 
     @PostMapping("update")
-    public ResponseEntity<APIResponse<String>> updateUserPassword(@RequestBody UserRequest userRequest){
-        return service.updateUserPassword(userRequest);
+    public ResponseEntity<APIResponse<String>> updateUserPassword(@Valid @RequestBody PasswordUpdateByUserRequest passwordUpdate){
+        String result = userService.updateUserPassword(passwordUpdate);
+        return ResponseEntity.ok(APIResponse.success(result));
     }
+
+    @GetMapping("get/user")
+    public ResponseEntity<APIResponse<UserResponse>> getUser(){
+        UserResponse userResponse = userService.getUser();
+        return ResponseEntity.ok(APIResponse.success(userResponse));
+    }
+
 }

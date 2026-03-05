@@ -1,86 +1,78 @@
 package com.loandemo.Loan.API.service;
 
+import com.loandemo.Loan.API.dto.login.LoginRequestDto;
+import com.loandemo.Loan.API.dto.login.LoginResponse;
+import com.loandemo.Loan.API.dto.register.UserRegistrationRequest;
+import com.loandemo.Loan.API.dto.register.UserRegistrationResponse;
+import com.loandemo.Loan.API.dto.update.PasswordUpdateByUserRequest;
+import com.loandemo.Loan.API.dto.user.UserResponse;
 import com.loandemo.Loan.API.jwttoken.JwtUtils;
 import com.loandemo.Loan.API.modul.User;
-import com.loandemo.Loan.API.modul.UserRequest;
-import com.loandemo.Loan.API.modul.UserResponseDto;
+import com.loandemo.Loan.API.dto.UserRequestDto;
 import com.loandemo.Loan.API.repository.UserRepository;
 import com.loandemo.Loan.API.responseapi.APIResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.swing.text.html.Option;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
 public class UserService {
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
+    private final EmailService emailService;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private JwtUtils jwtUtils;
-
-    public ResponseEntity<APIResponse<UserResponseDto>> createUser(UserRequest userRequest){
-        boolean isUserExist = userRepository.existsUserByUsername(userRequest.getUsername());
-        if(isUserExist){
-            return ResponseEntity.ok(APIResponse.error("user already exist."));
-        }
-        User user = User.builder()
-                .username(userRequest.getUsername())
-                .email(userRequest.getEmail())
-                .password_hash(passwordEncoder.encode(userRequest.getPassword()))
-                .role(userRequest.getRole())
-                .isActive(userRequest.is_active())
-                .created_at(Timestamp.valueOf(LocalDateTime.now()))
-                .created_by(userRequest.getCreated_by())
-                .updated_at(Timestamp.valueOf(LocalDateTime.now()))
-                .updated_by(userRequest.getUpdated_by())
-                .build();
-        User saveUser = userRepository.save(user);
-        UserResponseDto userResponseDto = UserResponseDto.builder().username(saveUser.getUsername()).role(saveUser.getRole()).build();
-        return ResponseEntity.ok(APIResponse.success(userResponseDto,"User register successfully."));
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtUtils jwtUtils, EmailService emailService){
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager  = authenticationManager;
+        this.jwtUtils = jwtUtils;
+        this.emailService = emailService;
     }
 
-    public ResponseEntity<APIResponse<UserResponseDto>> checkLogin(UserRequest userRequest){
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userRequest.getUsername(),userRequest.getPassword()));
-        if(authentication.isAuthenticated()){
-            System.out.println("principle "+authentication.getPrincipal());
-            UserResponseDto userResponseDto = UserResponseDto.builder()
-                    .jwtToken(jwtUtils.generateToken(authentication.getName())).build();
-            return ResponseEntity.ok(APIResponse.success(userResponseDto,"user is authenticate"));
-        }else{
-            return ResponseEntity.ok(APIResponse.error("user is not authenticate"));
-        }
-    }
-
-    public ResponseEntity<APIResponse<String>> updateUserPassword(UserRequest userRequest) {
+    public String updateUserPassword(PasswordUpdateByUserRequest passwordUpdate) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        Optional<User> userOptional = userRepository.findByUsername(username);
-        if (userOptional.isPresent()){
-            User user = userOptional.get();
-            user.setPassword_hash(passwordEncoder.encode(userRequest.getPassword()));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(()-> new RuntimeException("User not found"));
+        boolean bool = passwordEncoder.matches(passwordUpdate.getPassword(),user.getPassword());
+        if(bool){
+            user.setPassword(passwordEncoder.encode(passwordUpdate.getNew_password()));
             user.setUpdated_at(Timestamp.valueOf(LocalDateTime.now()));
-            user.setUpdated_by(username);
             userRepository.save(user);
-            return ResponseEntity.ok(APIResponse.success("User Password updated"));
-        }else{
-            return ResponseEntity.ok(APIResponse.error("User not found."));
+            return "Password Updated Successfully";
         }
+        else{
+            return "wrong password.";
+        }
+    }
+
+    public UserResponse getUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(()->new UsernameNotFoundException("User not found"));
+        return UserResponse.builder()
+                .id(user.getUser_id())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .active(user.isActive())
+                .created_at(user.getCreated_at().toString())
+                .created_by(user.getCreated_by())
+                .updated_at(user.getUpdated_at().toString())
+                .updated_at(user.getUpdated_by())
+                .build();
     }
 }

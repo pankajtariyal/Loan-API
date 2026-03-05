@@ -9,18 +9,31 @@ import lombok.NoArgsConstructor;
  * @param <T> type of data being returned
  */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class APIResponse<T> {
 
     private int code;       // HTTP or custom status code
     private String message; // Success or error message
     private T data;         // Payload (generic type)
 
+    private APIResponse(){}
+
+    private APIResponse(int status, String message){
+        this.code = status;
+        this.message = message;
+    }
+    private APIResponse(int status,String message,T data){
+        this.code = status;
+        this.message = message;
+        this.data = data;
+    }
     // Convenience static methods for success/error
 
     public static <T> APIResponse<T> success(T data, String message) {
         return new APIResponse<>(200, message, data);
+    }
+
+    public static <T> APIResponse<T> success(String message) {
+        return new APIResponse<>(200, message);
     }
 
     public static <T> APIResponse<T> success(T data) {
@@ -28,10 +41,10 @@ public class APIResponse<T> {
     }
 
     public static <T> APIResponse<T> error(String message, int code) {
-        return new APIResponse<>(code, message, null);
+        return new APIResponse<>(code, message);
     }
 
     public static <T> APIResponse<T> error(String message) {
-        return new APIResponse<>(500, message, null);
+        return new APIResponse<>(500, message);
     }
 }

@@ -46,8 +46,8 @@ public class FilterConfig {
                 .cors(AbstractHttpConfigurer::disable)
                 .sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth->{
-                    auth.antMatchers("/auth/**").permitAll();
-                    auth.antMatchers("/hello/**").authenticated();
+                    auth.antMatchers("/api/v1/auth/**","/api/v1/hello/**").permitAll();
+                    auth.antMatchers("/api/v1/admin").hasRole("ADMIN");
                     auth.anyRequest().authenticated();
                 });
         security.addFilterBefore(new JwtAuthenticationFilter(jwtUtils,userDetailServiceImp), UsernamePasswordAuthenticationFilter.class);
