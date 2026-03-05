@@ -6,13 +6,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserResponseDto {
+@Builder
+public class UserRequest {
     private String username;
+    private String email;
     private String role;
-    private boolean isActive;
     private String password;
-    private String jwtToken;
+    private boolean is_active;
+    private String created_by;
+    private String updated_by;
 }
