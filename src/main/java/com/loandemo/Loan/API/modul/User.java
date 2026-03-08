@@ -1,11 +1,8 @@
 package com.loandemo.Loan.API.modul;
 
 import lombok.*;
-import org.hibernate.annotations.Fetch;
-import org.springframework.context.annotation.Lazy;
 
 import javax.persistence.*;
-import java.math.BigInteger;
 import java.sql.Timestamp;
 
 @Entity
@@ -17,7 +14,7 @@ import java.sql.Timestamp;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long user_id;
+    private Long userId;
     @Column(name = "username",unique = true,nullable = false,length = 20)
     private String username;
     @Column(name = "email",unique = true,nullable = false,length = 100)
@@ -42,7 +39,7 @@ public class User {
     @Override
     public String toString() {
         return "User{" +
-                "user_id=" + user_id +
+                "userId=" + userId +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +

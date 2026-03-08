@@ -1,5 +1,6 @@
 package com.loandemo.Loan.API.service;
 
+import com.loandemo.Loan.API.dto.emiDto.ViewEmi;
 import com.loandemo.Loan.API.modul.EMISchedule;
 import com.loandemo.Loan.API.modul.Loan;
 import com.loandemo.Loan.API.repository.EMIRepository;
@@ -12,6 +13,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class EMIService {
@@ -81,6 +83,23 @@ public class EMIService {
         }
 
         emiRepository.saveAll(list);
+    }
+
+    public List<ViewEmi> getAllEmiByLoanId(long id){
+        List<EMISchedule> emiList = emiRepository.findByLoanIdOrderByEmiNumber(id);
+
+        List<ViewEmi> viewEmiList = emiList.stream()
+                .map(emi->{
+                    return ViewEmi.builder()
+                            .emiNumber(emi.getEmiNumber())
+                            .emiDate(emi.getEmiDate())
+                            .emiAmount(emi.getEmiAmount())
+                            .interestAmount(emi.getInterestAmount())
+                            .principle(emi.getPrincipleAmount())
+                            .status(emi.getStatus())
+                            .build();
+                }).collect(Collectors.toList());
+        return viewEmiList;
     }
 
 }

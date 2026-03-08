@@ -20,7 +20,7 @@ public class AdminService {
 
         List<UserResponse> responseList = userList.stream().map(user->{
             return UserResponse.builder()
-                    .id(user.getUser_id())
+                    .id(user.getUserId())
                     .username(user.getUsername())
                     .email(user.getEmail())
                     .role(user.getRole())

@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface LoanRepository extends JpaRepository<Loan,Long> {
@@ -29,4 +30,6 @@ public interface LoanRepository extends JpaRepository<Loan,Long> {
     @Query("SELECT new com.loandemo.Loan.API.dto.loan.get.GetAllLoan(" +
             "l.id,l.amount,l.interestRate,l.tenureMonths,l.panNumber,l.status,l.rejected_reason,l.approvedBy,l.approvedAt,l.createdAt) FROM Loan l")
     List<GetAllLoan> findAllLoan();
+
+    Optional<Loan> findByIdAndUserUserId(Long id,Long userId);
 }

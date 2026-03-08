@@ -3,6 +3,7 @@ package com.loandemo.Loan.API.modul;
 import com.loandemo.Loan.API.status.EMIStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
+@Data
 @Builder
 @Table(name = "loan_emi_schedule")
 @AllArgsConstructor
