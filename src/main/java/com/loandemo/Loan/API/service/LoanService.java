@@ -2,6 +2,7 @@ package com.loandemo.Loan.API.service;
 
 import com.loandemo.Loan.API.dto.loan.apply.LoanApplyRequest;
 import com.loandemo.Loan.API.dto.loan.apply.LoanApplyResponse;
+import com.loandemo.Loan.API.dto.loan.get.GetAllLoan;
 import com.loandemo.Loan.API.dto.loan.get.GetLoanByIdResponse;
 import com.loandemo.Loan.API.dto.loan.get.GetLoanByUserResponse;
 import com.loandemo.Loan.API.dto.user.UserResponse;
@@ -9,6 +10,7 @@ import com.loandemo.Loan.API.modul.Loan;
 import com.loandemo.Loan.API.modul.User;
 import com.loandemo.Loan.API.repository.LoanRepository;
 import com.loandemo.Loan.API.repository.UserRepository;
+import com.loandemo.Loan.API.status.LoanStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -58,7 +60,7 @@ public class LoanService {
     }
 
     private boolean isLoanLimitExceed(Long id){
-        int loanCount = loanRepository.countLoanByUserId(id);
+        int loanCount = loanRepository.countLoanByUserId(id, LoanStatus.REJECTED);
         return loanCount >= 3;
     }
 
@@ -108,5 +110,9 @@ public class LoanService {
         }catch (Exception e){
             throw new RuntimeException("Internal error occur");
         }
+    }
+
+    public List<GetAllLoan> getAllLoan() {
+        return loanRepository.findAllLoan();
     }
 }

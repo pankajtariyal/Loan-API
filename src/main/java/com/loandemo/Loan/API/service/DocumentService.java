@@ -24,8 +24,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -33,10 +35,12 @@ import java.util.stream.Collectors;
 public class DocumentService {
     private final DocumentRepository documentRepository;
     private final LoanRepository loanRepository;
+    private final EMIService emiService;
 
-    public DocumentService(DocumentRepository documentRepository,LoanRepository loanRepository){
+    public DocumentService(DocumentRepository documentRepository,LoanRepository loanRepository, EMIService emiService){
         this.documentRepository = documentRepository;
         this.loanRepository = loanRepository;
+        this.emiService = emiService;
     }
 
     @Transactional
@@ -54,10 +58,26 @@ public class DocumentService {
             }
 
             DocumentType documentType = DocumentType.valueOf(type.toUpperCase());
-            if(documentRepository.existsByLoanIdAndDocumentType(loanId,documentType)){
-                throw new IllegalArgumentException("Document already exist");
-            }
+//            if(documentRepository.existsByLoanIdAndStatusNot(loanId,documentType,DocumentStatus.REJECTED)){
+//                throw new IllegalArgumentException("Document already exist");
+//            }
+            Optional<Document> documentOptional = documentRepository.findByLoanIdAndDocumentType(loanId,documentType);
+            if(documentOptional.isPresent()){
+                Document document = documentOptional.get();
+                if(document.getStatus()!= DocumentStatus.REJECTED){
+                    throw new IllegalArgumentException("Document already exist");
+                }
 
+                Files.createDirectories(Paths.get(uploadDir));
+                String fileName = UUID.randomUUID()+"_" + StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+                Path path = Paths.get(uploadDir,fileName);
+                Files.copy(file.getInputStream(),path, StandardCopyOption.REPLACE_EXISTING);
+                document.setFilePath(path.toString());
+                document.setStatus(DocumentStatus.PENDING);
+                document.setRejectedReason(null);
+                documentRepository.save(document);
+                return "Document reuploaded successfully";
+            }
             Loan loan = loanRepository.findById(loanId)
                     .orElseThrow(()->new IllegalArgumentException("Loan does not found."));
 
@@ -159,8 +179,14 @@ public class DocumentService {
 
         Long loanId = loan.getId();
         int count = documentRepository.countByLoanIdAndStatus(loanId,DocumentStatus.VERIFIED);
+        int countRejection = documentRepository.countByLoanIdAndStatus(loanId,DocumentStatus.REJECTED);
         if(count == DocumentType.values().length){
             loan.setStatus(LoanStatus.APPROVED);
+            loanRepository.save(loan);
+            emiService.generateEMISchedule(loan);
+        }else if(countRejection>0){
+            loan.setStatus(LoanStatus.REJECTED);
+            loan.setRejected_reason(documentRequest.getRejectedReason());
             loanRepository.save(loan);
         }
 
