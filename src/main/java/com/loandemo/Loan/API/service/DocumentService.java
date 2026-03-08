@@ -5,8 +5,10 @@ import com.loandemo.Loan.API.dto.document.LoanWithDocument;
 import com.loandemo.Loan.API.dto.document.VerifyDocumentRequest;
 import com.loandemo.Loan.API.modul.Document;
 import com.loandemo.Loan.API.modul.Loan;
+import com.loandemo.Loan.API.modul.User;
 import com.loandemo.Loan.API.repository.DocumentRepository;
 import com.loandemo.Loan.API.repository.LoanRepository;
+import com.loandemo.Loan.API.repository.UserRepository;
 import com.loandemo.Loan.API.status.DocumentStatus;
 import com.loandemo.Loan.API.status.DocumentType;
 import com.loandemo.Loan.API.status.LoanStatus;
@@ -15,6 +17,9 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -33,18 +38,28 @@ import java.util.stream.Collectors;
 
 @Service
 public class DocumentService {
+    private final UserRepository userRepository;
     private final DocumentRepository documentRepository;
     private final LoanRepository loanRepository;
     private final EMIService emiService;
 
-    public DocumentService(DocumentRepository documentRepository,LoanRepository loanRepository, EMIService emiService){
+    public DocumentService(UserRepository userRepository, DocumentRepository documentRepository,LoanRepository loanRepository, EMIService emiService){
         this.documentRepository = documentRepository;
         this.loanRepository = loanRepository;
         this.emiService = emiService;
+        this.userRepository = userRepository;
     }
 
     @Transactional
     public String uploadDocument(Long loanId,String type, MultipartFile file){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(()->new UsernameNotFoundException("User not found."));
+
+        Loan loan =loanRepository.findByIdAndUserUserId(loanId,user.getUserId())
+                .orElseThrow(()->new IllegalArgumentException("No loan found for user"));
+
         String uploadDir = "upload/loan-" + loanId;
         try {
             if (!file.getContentType().equals("image/jpeg") &&
@@ -78,8 +93,8 @@ public class DocumentService {
                 documentRepository.save(document);
                 return "Document reuploaded successfully";
             }
-            Loan loan = loanRepository.findById(loanId)
-                    .orElseThrow(()->new IllegalArgumentException("Loan does not found."));
+//            Loan loan = loanRepository.findById(loanId)
+//                    .orElseThrow(()->new IllegalArgumentException("Loan does not found."));
 
             Files.createDirectories(Paths.get(uploadDir));
             String fileName = UUID.randomUUID()+"_" + StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));

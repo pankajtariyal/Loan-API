@@ -64,7 +64,7 @@ public class UserService {
         User user = userRepository.findByUsername(authentication.getName())
                 .orElseThrow(()->new UsernameNotFoundException("User not found"));
         return UserResponse.builder()
-                .id(user.getUser_id())
+                .id(user.getUserId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole())

@@ -38,7 +38,7 @@ public class LoanService {
         String username = authentication.getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(()->new UsernameNotFoundException("User not found."));
-        if(isLoanLimitExceed(user.getUser_id())){
+        if(isLoanLimitExceed(user.getUserId())){
             throw new RuntimeException("Loan Limit exceed");
         }
         Loan loan = Loan.builder()
@@ -70,7 +70,7 @@ public class LoanService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(()->new UsernameNotFoundException("User not found"));
 
-        List<LoanApplyResponse> loanList = loanRepository.findAllByUserId(user.getUser_id());
+        List<LoanApplyResponse> loanList = loanRepository.findAllByUserId(user.getUserId());
 
         GetLoanByUserResponse userLoans = GetLoanByUserResponse.builder()
                 .username(user.getUsername())
@@ -87,7 +87,7 @@ public class LoanService {
                     .orElseThrow(()->new IllegalArgumentException("Found error"));
             User user = loan.getUser();
             UserResponse userResponse = UserResponse.builder()
-                    .id(user.getUser_id())
+                    .id(user.getUserId())
                     .username(user.getUsername())
                     .email(user.getEmail())
                     .role(user.getRole())
