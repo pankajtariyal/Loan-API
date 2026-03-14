@@ -1,9 +1,7 @@
 package com.loandemo.Loan.API.repository;
 
-import com.loandemo.Loan.API.dto.document.LoanWithDocument;
 import com.loandemo.Loan.API.dto.loan.apply.LoanApplyResponse;
 import com.loandemo.Loan.API.dto.loan.get.GetAllLoan;
-import com.loandemo.Loan.API.dto.loan.get.GetLoanByIdResponse;
 import com.loandemo.Loan.API.modul.Loan;
 import com.loandemo.Loan.API.status.LoanStatus;
 import org.springframework.data.jpa.repository.JpaRepository;

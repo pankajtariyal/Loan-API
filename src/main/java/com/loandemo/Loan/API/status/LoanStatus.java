@@ -6,5 +6,6 @@ public enum LoanStatus {
     UNDER_REVIEW,
     APPROVED,
     REJECTED,
-    VERIFIED
+    VERIFIED,
+    CLOSED
 }
