@@ -4,6 +4,7 @@ import com.loandemo.Loan.API.dto.PaymentVerification;
 import com.loandemo.Loan.API.responseapi.APIResponse;
 import com.loandemo.Loan.API.uitls.RazorPaymentVerificationUtil;
 import com.razorpay.*;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Hidden
 @RestController
 @RequestMapping("payment")
 @CrossOrigin(origins = "http://localhost:3001")

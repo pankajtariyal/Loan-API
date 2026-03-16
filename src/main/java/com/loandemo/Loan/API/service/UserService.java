@@ -1,30 +1,19 @@
 package com.loandemo.Loan.API.service;
 
-import com.loandemo.Loan.API.dto.login.LoginRequestDto;
-import com.loandemo.Loan.API.dto.login.LoginResponse;
-import com.loandemo.Loan.API.dto.register.UserRegistrationRequest;
-import com.loandemo.Loan.API.dto.register.UserRegistrationResponse;
 import com.loandemo.Loan.API.dto.update.PasswordUpdateByUserRequest;
 import com.loandemo.Loan.API.dto.user.UserResponse;
 import com.loandemo.Loan.API.jwttoken.JwtUtils;
 import com.loandemo.Loan.API.modul.User;
-import com.loandemo.Loan.API.dto.UserRequestDto;
 import com.loandemo.Loan.API.repository.UserRepository;
-import com.loandemo.Loan.API.responseapi.APIResponse;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 public class UserService {

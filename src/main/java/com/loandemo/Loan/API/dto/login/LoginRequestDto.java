@@ -1,5 +1,6 @@
 package com.loandemo.Loan.API.dto.login;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,10 +13,13 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Schema(description = "Login request body")
 public class LoginRequestDto {
 
+    @Schema(description = "Username", example = "pankaj")
     @NotBlank(message = "Username is required")
     private String username;
+    @Schema(description = "password", example = "pan@123")
     @NotBlank(message = "Password is required")
     private String password;
 

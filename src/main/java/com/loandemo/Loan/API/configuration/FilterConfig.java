@@ -46,6 +46,17 @@ public class FilterConfig {
                 .cors(AbstractHttpConfigurer::disable)
                 .sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth->{
+                    auth.antMatchers(
+                            "/api/v1/swagger-ui.html",
+                            "/swagger-ui.html",
+                            "/api/v1/swagger-ui/**",
+                            "/swagger-ui/**",
+                            "/api/v1/v3/api-docs/**",
+                            "/api/v1/swagger-resources/**",
+                            "/api/v1/webjars/**",
+                            "/api/v1/actuator/**",
+                            "/api/v1/index/**"
+                    ).permitAll();
                     auth.antMatchers("/api/v1/auth/**","/api/v1/hello/**").permitAll();
                     auth.antMatchers("/api/v1/admin").hasRole("ADMIN");
                     auth.anyRequest().authenticated();
