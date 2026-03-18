@@ -12,9 +12,28 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
+/**
+ * REST Controller responsible for handling User-related operations.
+ *
+ * <p>This controller provides APIs for:
+ * <ul>
+ *     <li>Updating user password</li>
+ *     <li>Fetching authenticated user details</li>
+ * </ul>
+ *
+ * <p>All endpoints require JWT authentication.
+ *
+ * @apiNote These APIs operate on the currently authenticated user.
+ *
+ * @implNote This controller delegates user-related business logic to {@link UserService}.
+ *
+ * @since 1.0
+ * @author Abhishek Tadiwal
+ */
 @Tag(
-        name="User APIs",
-        description = "Operation related to User")
+        name = "User APIs",
+        description = "Operations related to user management"
+)
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("user")
@@ -26,22 +45,72 @@ public class UserController {
         this.userService = userService;
     }
 
-    @Operation(summary = "Update USer", description = "Update Existing user password")
+    /**
+     * Updates the password of the authenticated user.
+     *
+     * <p>This API allows users to securely update their password
+     * by providing the required credentials in the request body.
+     *
+     * @param passwordUpdate request payload containing old and new password
+     * @return {@link APIResponse} containing success message
+     *
+     * @apiNote The user must be authenticated with a valid JWT token.
+     *
+     * @implSpec This method performs the following steps:
+     * <ol>
+     *     <li>Validates current password</li>
+     *     <li>Checks new password constraints</li>
+     *     <li>Updates password in database</li>
+     *     <li>Returns success message</li>
+     * </ol>
+     *
+     * @since 1.0
+     */
+    @Operation(
+            summary = "Update User Password",
+            description = "Update password of the authenticated user"
+    )
     @PostMapping("update")
     public ResponseEntity<APIResponse<String>> updateUserPassword(
-            @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "User Password update request",
+            @Valid
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "User password update request payload",
                     required = true
-            ) PasswordUpdateByUserRequest passwordUpdate){
+            )
+            PasswordUpdateByUserRequest passwordUpdate){
+
         String result = userService.updateUserPassword(passwordUpdate);
         return ResponseEntity.ok(APIResponse.success(result));
     }
 
-    @Operation(summary = "User Detail", description = "User detail get")
+    /**
+     * Fetches details of the authenticated user.
+     *
+     * <p>This API returns user profile information such as
+     * name, email, and other registered details.
+     *
+     * @return {@link APIResponse} containing {@link UserResponse}
+     *
+     * @apiNote The user must be authenticated with a valid JWT token.
+     *
+     * @implSpec This method:
+     * <ol>
+     *     <li>Identifies the authenticated user</li>
+     *     <li>Fetches user details from database</li>
+     *     <li>Maps entity to response DTO</li>
+     * </ol>
+     *
+     * @since 1.0
+     */
+    @Operation(
+            summary = "Get User Details",
+            description = "Fetch details of the authenticated user"
+    )
     @GetMapping("get/user")
     public ResponseEntity<APIResponse<UserResponse>> getUser(){
+
         UserResponse userResponse = userService.getUser();
         return ResponseEntity.ok(APIResponse.success(userResponse));
     }
-
 }

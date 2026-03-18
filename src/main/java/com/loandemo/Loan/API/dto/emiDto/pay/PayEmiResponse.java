@@ -7,20 +7,51 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Data Transfer Object representing the response after making an EMI payment.
+ *
+ * <p>This DTO is returned to the client after a successful EMI payment and
+ * contains details about the payment, including the EMI, loan, amount paid,
+ * transaction ID, and the updated status.</p>
+ *
+ * @since 1.0
+ */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "EMI Pay response Modal")
+@Schema(description = "EMI Payment Response Modal")
 public class PayEmiResponse {
-    @Schema(description = "Loan id paid emi of",example = "3")
+
+    /**
+     * The ID of the loan for which the EMI was paid.
+     */
+    @Schema(description = "Loan ID for which EMI is paid", example = "3")
     private long loanId;
-    @Schema(description = "EMI(id) to paid of loan", example = "1")
+
+    /**
+     * The ID of the EMI that was paid.
+     */
+    @Schema(description = "EMI (ID) of the loan that was paid", example = "1")
     private long emiId;
-    @Schema(description = "EMI Payment transaction", example = "3d3a5d43-4464-41df-97db-f3b7d0f9eb2b")
+
+    /**
+     * Unique transaction identifier for this payment.
+     */
+    @Schema(description = "EMI Payment transaction UUID", example = "3d3a5d43-4464-41df-97db-f3b7d0f9eb2b")
     private String transactionUUID;
-    @Schema(description = "Emi principle amount paid", example = "4050.34")
+
+    /**
+     * Amount of EMI that was paid (principle + interest if applicable).
+     */
+    @Schema(description = "EMI principle amount paid", example = "4050.34")
     private double amount;
-    @Schema(description = "EMI status",example = "PAID")
+
+    /**
+     * The updated status of the EMI after payment.
+     *
+     * <p>Possible values are {@link EMIStatus#PAID}, {@link EMIStatus#PENDING}, etc.</p>
+     */
+    @Schema(description = "EMI status after payment", example = "PAID")
     private EMIStatus status;
 }

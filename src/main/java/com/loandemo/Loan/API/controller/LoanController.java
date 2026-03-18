@@ -20,6 +20,28 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.validation.Valid;
 import java.util.List;
 
+/**
+ * REST Controller responsible for handling Loan related operations.
+ *
+ * <p>This controller provides APIs for:
+ * <ul>
+ *     <li>Applying for a loan</li>
+ *     <li>Fetching loans for the authenticated user</li>
+ *     <li>Fetching loan details by ID (Admin only)</li>
+ *     <li>Fetching all loans (Admin only)</li>
+ *     <li>Uploading documents for a loan</li>
+ * </ul>
+ *
+ * <p>All endpoints are secured using JWT-based authentication.
+ *
+ * @apiNote All APIs require a valid Bearer token in the Authorization header.
+ *
+ * @implNote This controller delegates business logic to {@link LoanService}
+ * and {@link DocumentService}.
+ *
+ * @since 1.0
+ * @author Abhishek Tadiwal
+ */
 @Tag(
         name="Loan APIs",
         description = "Operation related to loans")
@@ -35,6 +57,26 @@ public class LoanController {
         this.documentService = documentService;
     }
 
+    /**
+     * Creates a new loan application for the authenticated user.
+     *
+     * <p>This API accepts loan details such as amount, tenure,
+     * and interest rate to create a new loan.
+     *
+     * @param loanApplyRequest request payload containing loan details
+     * @return {@link APIResponse} containing {@link LoanApplyResponse}
+     *
+     * @apiNote The user must be authenticated with a valid JWT token.
+     *
+     * @implSpec This method performs the following steps:
+     * <ol>
+     *     <li>Validates the request payload</li>
+     *     <li>Creates a new loan entity</li>
+     *     <li>Persists the loan in the database</li>
+     * </ol>
+     *
+     * @since 1.0
+     */
     @Operation(
             summary = "Apply Loan",
             description = "Creates a new loan for a customer"
@@ -49,6 +91,24 @@ public class LoanController {
         return ResponseEntity.ok(APIResponse.success(response,"Loan Application Submitted Successfully"));
     }
 
+
+    /**
+     * Retrieves all loans associated with the authenticated user.
+     *
+     * <p>This API returns the list of loans belonging to the currently logged-in user.
+     *
+     * @return {@link APIResponse} containing {@link GetLoanByUserResponse}
+     *
+     * @apiNote The user must be authenticated with a valid JWT token.
+     *
+     * @implSpec This method:
+     * <ol>
+     *     <li>Fetches the authenticated user</li>
+     *     <li>Retrieves all loans associated with the user</li>
+     * </ol>
+     *
+     * @since 1.0
+     */
     @Operation(
             summary = "Get All Loan",
             description = "Loan list customer specific"
@@ -59,6 +119,25 @@ public class LoanController {
         return ResponseEntity.ok(APIResponse.success(response,"Loan List"));
     }
 
+    /**
+     * Retrieves loan details by loan ID.
+     *
+     * <p>This API is restricted to ADMIN users and returns detailed
+     * information for a specific loan.
+     *
+     * @param id the unique identifier of the loan
+     * @return {@link APIResponse} containing {@link GetLoanByIdResponse}
+     *
+     * @apiNote Only users with ADMIN role can access this endpoint.
+     *
+     * @implSpec This method:
+     * <ol>
+     *     <li>Validates loan ID</li>
+     *     <li>Fetches loan details from database</li>
+     * </ol>
+     *
+     * @since 1.0
+     */
     @Operation(
             summary = "Get Loan",
             description = "Only Admin can access"
@@ -72,6 +151,20 @@ public class LoanController {
         return ResponseEntity.ok(APIResponse.success(getLoanByIdResponse,"Loan"));
     }
 
+    /**
+     * Retrieves all loan applications in the system.
+     *
+     * <p>This API is restricted to ADMIN users and returns
+     * all loan records.
+     *
+     * @return {@link APIResponse} containing list of {@link GetAllLoan}
+     *
+     * @apiNote Only users with ADMIN role can access this endpoint.
+     *
+     * @implSpec This method fetches all loan records from the database.
+     *
+     * @since 1.0
+     */
     @Operation(
             summary = "Get All customer loan",
             description = "Only Admin can access"
@@ -83,6 +176,34 @@ public class LoanController {
         return ResponseEntity.ok(APIResponse.success(getAllLoans,"Loan"));
     }
 
+
+    /**
+     * Uploads a document for a specific loan.
+     *
+     * <p>This API allows users to upload documents such as:
+     * <ul>
+     *     <li>PAN Card</li>
+     *     <li>ID Proof</li>
+     *     <li>Salary Slip</li>
+     * </ul>
+     *
+     * @param loanId the unique identifier of the loan
+     * @param documentType type of the document (e.g., PAN, ID_PROOF, SALARY_SLIP)
+     * @param file the document file to be uploaded
+     *
+     * @return {@link APIResponse} containing success message
+     *
+     * @throws IllegalArgumentException if file is empty
+     *
+     * @implSpec This method:
+     * <ol>
+     *     <li>Validates file input</li>
+     *     <li>Uploads document</li>
+     *     <li>Associates document with loan</li>
+     * </ol>
+     *
+     * @since 1.0
+     */
     @Operation(
             summary="Upload loan document",
             description="Upload PAN, SALARY_SLIP or ID_PROOF"

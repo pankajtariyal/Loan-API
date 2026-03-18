@@ -28,21 +28,92 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Service class responsible for handling EMI (Equated Monthly Installment)
+ * related operations in the Loan Management System.
+ *
+ * <p>Main Responsibilities:</p>
+ * <ul>
+ *     <li>Generate EMI schedule after loan approval</li>
+ *     <li>Fetch EMI details for a loan</li>
+ *     <li>Handle EMI payments</li>
+ * </ul>
+ *
+ * <p>Business Flow:</p>
+ * <pre>
+ * Loan Approved →
+ * EMI Schedule Generated →
+ * User Pays EMI →
+ * EMI Status Updated →
+ * All EMIs Paid → Loan Closed
+ * </pre>
+ *
+ * <p>EMI Formula Used:</p>
+ * EMI = [P × R × (1+R)^N] / [(1+R)^N - 1]
+ * where:
+ * P = Principal Amount
+ * R = Monthly Interest Rate
+ * N = Number of Months
+ *
+ * @author Abhishek Tadiwal
+ */
 @Service
 public class EMIService {
+    /**
+     * Repository for EMI schedule operations.
+     */
     private final EMIRepository emiRepository;
+
+    /**
+     * Repository for loan operations.
+     */
     private final LoanRepository loanRepository;
+
+    /**
+     * Repository for user operations.
+     */
     private final UserRepository userRepository;
+
+    /**
+     * Service responsible for handling EMI payments.
+     */
     private final LoanEmiPaymentService loanEmiPaymentService;
-    @Autowired
-    public EMIService(EMIRepository emiRepository,LoanRepository loanRepository,
-                      UserRepository userRepository, LoanEmiPaymentService loanEmiPaymentService){
+
+    /**
+     * Constructor for dependency injection.
+     *
+     * @param emiRepository EMI repository
+     * @param loanRepository Loan repository
+     * @param userRepository User repository
+     * @param loanEmiPaymentService EMI payment service
+     */
+    public EMIService(EMIRepository emiRepository,
+                      LoanRepository loanRepository,
+                      UserRepository userRepository,
+                      LoanEmiPaymentService loanEmiPaymentService){
         this.emiRepository = emiRepository;
         this.loanRepository = loanRepository;
         this.userRepository = userRepository;
         this.loanEmiPaymentService = loanEmiPaymentService;
     }
 
+    /**
+     * Generates EMI schedule for an approved loan.
+     *
+     * <p>This method calculates EMI using standard formula and creates
+     * monthly EMI entries including:</p>
+     * <ul>
+     *     <li>EMI amount</li>
+     *     <li>Interest component</li>
+     *     <li>Principal component</li>
+     *     <li>Remaining balance</li>
+     *     <li>Due date</li>
+     * </ul>
+     *
+     * <p>Each EMI is stored in the database.</p>
+     *
+     * @param loan loan for which EMI schedule is generated
+     */
     public void generateEMISchedule(Loan loan) {
 
         BigDecimal principal = BigDecimal.valueOf(loan.getAmount());
@@ -121,6 +192,31 @@ public class EMIService {
         return viewEmiList;
     }
 
+    /**
+     * Processes EMI payment for a specific loan and EMI.
+     *
+     * <p>This method performs multiple validations:</p>
+     * <ul>
+     *     <li>Checks if user is authenticated</li>
+     *     <li>Validates loan ownership</li>
+     *     <li>Ensures loan is APPROVED</li>
+     *     <li>Ensures EMI is not already PAID</li>
+     *     <li>Validates payment date and amount</li>
+     * </ul>
+     *
+     * <p>On successful payment:</p>
+     * <ul>
+     *     <li>Payment is processed via payment service</li>
+     *     <li>EMI status is updated to PAID</li>
+     *     <li>If all EMIs are paid → Loan status is set to CLOSED</li>
+     * </ul>
+     *
+     * @param loanId loan ID
+     * @param emiId EMI ID
+     * @param payEmiRequest payment request containing amount and details
+     * @return {@link PayEmiResponse} containing transaction details
+     * @throws Exception if validation fails or payment error occurs
+     */
     @Transactional
     public PayEmiResponse payEmi(Long loanId, Long emiId, PayEmiRequest payEmiRequest) throws Exception {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -143,7 +239,7 @@ public class EMIService {
         LocalDate emiDate = emiSchedule.getEmiDate();
 
         if(currentDate.isAfter(emiDate)){
-            throw new IllegalArgumentException("EMI cannot be paid before due date");
+            throw new IllegalArgumentException("EMI cannot be paid because due date must include due penalty");
         }
 
         if(payEmiRequest.getAmount()!=emiSchedule.getPrincipleAmount()) {

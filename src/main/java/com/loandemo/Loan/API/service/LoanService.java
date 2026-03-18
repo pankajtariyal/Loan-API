@@ -19,19 +19,58 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
+/**
+ * Service responsible for managing loan-related business logic.
+ *
+ * <p>This service handles the complete lifecycle of a loan, including:</p>
+ * <ul>
+ *     <li>Applying for a new loan</li>
+ *     <li>Fetching all loans for a user</li>
+ *     <li>Fetching details of a specific loan by ID</li>
+ *     <li>Fetching all loans in the system</li>
+ * </ul>
+ *
+ * <p>The service interacts with {@link LoanRepository} and {@link UserRepository}
+ * to persist and retrieve loan and user data from the database.</p>
+ *
+ * @implNote Transactions are managed using {@link Transactional} where necessary.
+ * @since 1.0
+ */
 @Service
 public class LoanService {
 
     private final LoanRepository loanRepository;
     private final UserRepository userRepository;
+
+    /**
+     * Constructs a new {@code LoanService} with the given repositories.
+     *
+     * @param loanRepository repository for Loan entities
+     * @param userRepository repository for User entities
+     */
     @Autowired
     public LoanService(LoanRepository loanRepository, UserRepository userRepository){
         this.loanRepository = loanRepository;
         this.userRepository = userRepository;
     }
 
+    /**
+     * Processes a new loan application for the currently authenticated user.
+     *
+     * <p>This method performs the following steps:</p>
+     * <ol>
+     *     <li>Retrieve the currently authenticated user.</li>
+     *     <li>Check if the user has exceeded the maximum allowed active loans.</li>
+     *     <li>Create a new {@link Loan} entity.</li>
+     *     <li>Save the loan to the database.</li>
+     *     <li>Return a {@link LoanApplyResponse} with loan details.</li>
+     * </ol>
+     *
+     * @param request the loan application request containing amount, interest rate, tenure, and PAN number
+     * @return {@link LoanApplyResponse} containing the applied loan details
+     * @throws RuntimeException if the user exceeds loan limit or user is not found
+     */
     @Transactional
     public LoanApplyResponse applyLoan(LoanApplyRequest request){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -59,11 +98,23 @@ public class LoanService {
                 .build();
     }
 
-    private boolean isLoanLimitExceed(Long id){
-        int loanCount = loanRepository.countLoanByUserId(id, LoanStatus.REJECTED);
+    /**
+     * Checks if a user has exceeded the maximum allowed active loans.
+     *
+     * @param userId the ID of the user
+     * @return {@code true} if the user has 3 or more active loans, {@code false} otherwise
+     */
+    private boolean isLoanLimitExceed(Long userId){
+        int loanCount = loanRepository.countLoanByUserId(userId, LoanStatus.REJECTED);
         return loanCount >= 3;
     }
 
+    /**
+     * Retrieves all loans for the currently authenticated user.
+     *
+     * @return {@link GetLoanByUserResponse} containing user details and a list of loans
+     * @throws UsernameNotFoundException if the user is not found
+     */
     public GetLoanByUserResponse getLoan(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
@@ -72,19 +123,24 @@ public class LoanService {
 
         List<LoanApplyResponse> loanList = loanRepository.findAllByUserId(user.getUserId());
 
-        GetLoanByUserResponse userLoans = GetLoanByUserResponse.builder()
+        return GetLoanByUserResponse.builder()
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .loanList(loanList)
                 .build();
-
-        return userLoans;
     }
 
+    /**
+     * Retrieves detailed information of a loan by its ID.
+     *
+     * @param id the ID of the loan
+     * @return {@link GetLoanByIdResponse} containing detailed loan and user information
+     * @throws RuntimeException if the loan is not found or an internal error occurs
+     */
     public GetLoanByIdResponse getLoanById(Long id){
         try {
             Loan loan = loanRepository.findById(id)
-                    .orElseThrow(()->new IllegalArgumentException("Found error"));
+                    .orElseThrow(()->new IllegalArgumentException("Loan not found"));
             User user = loan.getUser();
             UserResponse userResponse = UserResponse.builder()
                     .id(user.getUserId())
@@ -108,10 +164,15 @@ public class LoanService {
                     .createdAt(loan.getCreatedAt())
                     .build();
         }catch (Exception e){
-            throw new RuntimeException("Internal error occur");
+            throw new RuntimeException("Internal error occurred");
         }
     }
 
+    /**
+     * Retrieves a list of all loans in the system.
+     *
+     * @return a list of {@link GetAllLoan} representing all loans
+     */
     public List<GetAllLoan> getAllLoan() {
         return loanRepository.findAllLoan();
     }

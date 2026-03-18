@@ -8,11 +8,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 
 @SpringBootApplication
 @EnableMethodSecurity
-//@OpenAPIDefinition(info = @Info(
-//        title = "Loan API",
-//        version = "1.0.0",
-//        description = "Loan management API with authentication and Razorpay integration"
-//))
 public class LoanApiApplication {
 
 	public static void main(String[] args) {

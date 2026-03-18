@@ -15,23 +15,68 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * REST Controller responsible for handling Loan EMI Payment Transactions.
+ *
+ * <p>This controller provides APIs for:
+ * <ul>
+ *     <li>Fetching EMI payment transactions for a specific loan</li>
+ * </ul>
+ *
+ * <p>All endpoints require JWT authentication.
+ *
+ * @apiNote Users can only access transactions related to their own loans.
+ *
+ * @implNote This controller delegates payment-related logic to {@link LoanEmiPaymentService}.
+ *
+ * @since 1.0
+ * @author Abhishek Tadiwal
+ */
 @Tag(
-        name="Payment APIs",
-        description = "Operation related to Emi payment")
+        name = "Payment APIs",
+        description = "Operations related to EMI payment transactions"
+)
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("loan/emi/transaction")
 public class LoanPaymentController {
 
     private final LoanEmiPaymentService loanEmiPaymentService;
+
     public LoanPaymentController(LoanEmiPaymentService loanEmiPaymentService){
         this.loanEmiPaymentService = loanEmiPaymentService;
     }
 
-    @Operation(summary = "Get EMI Transaction", description = "Customer to get their loan emi transaction ")
+    /**
+     * Fetches all EMI payment transactions for a specific loan.
+     *
+     * <p>This API allows users to view the complete payment history
+     * of a loan, including paid and pending EMI details.
+     *
+     * @param id ID of the loan
+     * @return {@link APIResponse} containing list of {@link ViewTransaction}
+     *
+     * @apiNote The user must be authenticated and authorized to access the loan.
+     *
+     * @implSpec This method performs the following steps:
+     * <ol>
+     *     <li>Validates loan ownership</li>
+     *     <li>Fetches all EMI payment records</li>
+     *     <li>Maps data into transaction response DTO</li>
+     *     <li>Returns list of transactions</li>
+     * </ol>
+     *
+     * @since 1.0
+     */
+    @Operation(
+            summary = "Get EMI Transactions",
+            description = "Fetch all EMI transactions for a specific loan"
+    )
     @GetMapping("{loanId}")
     public ResponseEntity<APIResponse<List<ViewTransaction>>> getAllEmiTransaction(
-            @Parameter(description = "Loan id") @PathVariable("loanId")Long id){
+            @Parameter(description = "Loan ID")
+            @PathVariable("loanId") Long id){
+
         List<ViewTransaction> response = loanEmiPaymentService.getAllPaymentByLoanId(id);
         return ResponseEntity.ok(APIResponse.success(response,"success"));
     }

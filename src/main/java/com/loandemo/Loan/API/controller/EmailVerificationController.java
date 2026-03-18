@@ -1,6 +1,5 @@
 package com.loandemo.Loan.API.controller;
 
-import com.loandemo.Loan.API.responseapi.APIResponse;
 import com.loandemo.Loan.API.service.EmailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -9,9 +8,28 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST Controller responsible for handling Email Verification operations.
+ *
+ * <p>This controller provides APIs for:
+ * <ul>
+ *     <li>Verifying user email after registration</li>
+ * </ul>
+ *
+ * <p>Users receive a verification link via email containing a token
+ * and username, which is used to validate their account.
+ *
+ * @apiNote This endpoint is typically accessed via a link sent to the user's email.
+ *
+ * @implNote This controller delegates email verification logic to {@link EmailService}.
+ *
+ * @since 1.0
+ * @author Abhishek Tadiwal
+ */
 @Tag(
-        name="Email APIs",
-        description = "Operation related to Email")
+        name = "Email APIs",
+        description = "Operations related to email verification"
+)
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("email")
@@ -23,12 +41,42 @@ public class EmailVerificationController {
         this.emailService = emailService;
     }
 
-    @Operation(summary = "Verify Email", description = "Verify Email when user register")
+    /**
+     * Verifies a user's email using a token and username.
+     *
+     * <p>This API is triggered when the user clicks on the verification
+     * link sent to their registered email address.
+     *
+     * @param token verification token sent via email
+     * @param username username of the registered user
+     * @return success or failure message as a plain string
+     *
+     * @apiNote This endpoint may be accessed without authentication
+     * as it is part of the registration flow.
+     *
+     * @implSpec This method performs the following steps:
+     * <ol>
+     *     <li>Validates the verification token</li>
+     *     <li>Matches the token with the user</li>
+     *     <li>Marks the email as verified</li>
+     *     <li>Returns verification status</li>
+     * </ol>
+     *
+     * @since 1.0
+     */
+    @Operation(
+            summary = "Verify Email",
+            description = "Verify user email using token and username"
+    )
     @GetMapping("verify")
     public ResponseEntity<String> verify(
-            @Parameter(description = "Authentication token for verification") @RequestParam("token") String token,
-            @Parameter(description = "Username") @RequestParam("user") String username){
-        String result =  emailService.verifyEmail(token,username);
+            @Parameter(description = "Verification token")
+            @RequestParam("token") String token,
+
+            @Parameter(description = "Username")
+            @RequestParam("user") String username){
+
+        String result = emailService.verifyEmail(token, username);
         return ResponseEntity.ok(result);
     }
 }

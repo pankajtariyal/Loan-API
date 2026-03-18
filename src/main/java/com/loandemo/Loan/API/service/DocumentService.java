@@ -36,20 +36,94 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Service class responsible for handling document-related operations
+ * in the Loan Management System.
+ *
+ * <p>This service manages:</p>
+ * <ul>
+ *     <li>Uploading documents for a loan</li>
+ *     <li>Re-uploading rejected documents</li>
+ *     <li>Fetching loan details along with documents</li>
+ *     <li>Downloading documents</li>
+ *     <li>Verifying documents (admin operation)</li>
+ * </ul>
+ *
+ * <p>Business Logic:</p>
+ * <ul>
+ *     <li>Only PDF and JPG files are allowed</li>
+ *     <li>Maximum file size allowed is 5MB</li>
+ *     <li>Each loan must have all required {@link DocumentType}</li>
+ *     <li>Loan status changes based on document verification</li>
+ * </ul>
+ *
+ * <p>Loan Status Flow based on documents:</p>
+ * <pre>
+ * All documents uploaded → UNDER_REVIEW
+ * All documents VERIFIED → APPROVED → EMI generation
+ * Any document REJECTED → REJECTED
+ * </pre>
+ *
+ * @author Abhishek Tadiwal
+ */
 @Service
 public class DocumentService {
+    /**
+     * Repository for user-related database operations.
+     */
     private final UserRepository userRepository;
+
+    /**
+     * Repository for document-related database operations.
+     */
     private final DocumentRepository documentRepository;
+
+    /**
+     * Repository for loan-related database operations.
+     */
     private final LoanRepository loanRepository;
+
+    /**
+     * Service responsible for EMI generation after loan approval.
+     */
     private final EMIService emiService;
 
-    public DocumentService(UserRepository userRepository, DocumentRepository documentRepository,LoanRepository loanRepository, EMIService emiService){
+    /**
+     * Constructor-based dependency injection.
+     *
+     * @param userRepository user repository
+     * @param documentRepository document repository
+     * @param loanRepository loan repository
+     * @param emiService EMI service
+     */
+    public DocumentService(UserRepository userRepository,
+                           DocumentRepository documentRepository,
+                           LoanRepository loanRepository,
+                           EMIService emiService){
         this.documentRepository = documentRepository;
         this.loanRepository = loanRepository;
         this.emiService = emiService;
         this.userRepository = userRepository;
     }
 
+    /**
+     * Uploads or re-uploads a document for a specific loan.
+     *
+     * <p>This method performs the following:</p>
+     * <ul>
+     *     <li>Validates file type (PDF/JPG)</li>
+     *     <li>Validates file size (max 5MB)</li>
+     *     <li>Checks if document already exists</li>
+     *     <li>Allows re-upload only if previous document was rejected</li>
+     *     <li>Saves file to local storage</li>
+     *     <li>Updates loan status to UNDER_REVIEW when all documents are uploaded</li>
+     * </ul>
+     *
+     * @param loanId ID of the loan
+     * @param type document type (string representation of {@link DocumentType})
+     * @param file uploaded file
+     * @return success message
+     */
     @Transactional
     public String uploadDocument(Long loanId,String type, MultipartFile file){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -109,7 +183,7 @@ public class DocumentService {
                     .build();
 
             documentRepository.save(document);
-            int count = documentRepository.countByLoanIdAndStatus(loanId);
+            int count = documentRepository.countByLoanIdAndStatus(loanId,DocumentStatus.REJECTED);
             if(count== DocumentType.values().length){
                 loan.setStatus(LoanStatus.UNDER_REVIEW);
                 loanRepository.save(loan);
@@ -120,6 +194,14 @@ public class DocumentService {
         }
     }
 
+    /**
+     * Retrieves all loans along with their associated documents.
+     *
+     * <p>This method maps {@link Loan} entities into {@link LoanWithDocument}
+     * DTOs including document details.</p>
+     *
+     * @return list of loans with document details
+     */
     public List<LoanWithDocument> getAllDocument(){
         List<Loan> documentList = loanRepository.findAllLoanWithDocument();
 
@@ -150,6 +232,21 @@ public class DocumentService {
                 .collect(Collectors.toList());
     }
 
+
+    /**
+     * Downloads a document file associated with a loan.
+     *
+     * <p>This method:</p>
+     * <ul>
+     *     <li>Fetches document by loan ID and document ID</li>
+     *     <li>Loads file from storage</li>
+     *     <li>Returns file as a downloadable resource</li>
+     * </ul>
+     *
+     * @param loanId ID of the loan
+     * @param documentId ID of the document
+     * @return {@link ResponseEntity} containing file resource
+     */
     public ResponseEntity<Resource> download(Long loanId, Long documentId) {
 
         Document document  = documentRepository.findByIdAndLoanId(documentId,loanId)
@@ -177,6 +274,24 @@ public class DocumentService {
         }
     }
 
+    /**
+     * Verifies or rejects a document (admin operation).
+     *
+     * <p>This method performs the following:</p>
+     * <ul>
+     *     <li>Checks if document is in PENDING state</li>
+     *     <li>Updates document status (VERIFIED/REJECTED)</li>
+     *     <li>Updates loan status based on document verification:</li>
+     *     <ul>
+     *         <li>All VERIFIED → Loan APPROVED → EMI generated</li>
+     *         <li>Any REJECTED → Loan REJECTED</li>
+     *     </ul>
+     * </ul>
+     *
+     * @param id document ID
+     * @param documentRequest request containing status and rejection reason
+     * @return status update message
+     */
     @Transactional
     public String verifyDocument(Long id, VerifyDocumentRequest documentRequest) {
         Document document = documentRepository.findById(id)
