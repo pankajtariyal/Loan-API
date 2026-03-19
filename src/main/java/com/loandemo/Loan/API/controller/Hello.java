@@ -1,7 +1,10 @@
 package com.loandemo.Loan.API.controller;
 
+import com.loandemo.Loan.API.uitls.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("hello")
 public class Hello {
 
+    private static final Logger logger = LoggerFactory.getLogger(Hello.class);
     /**
      * For testing purpose
      * @since 1.0
@@ -32,6 +36,7 @@ public class Hello {
     @Operation(summary = "Hello", description = "For testing api auth")
     @GetMapping("hello")
     public String hello(){
+        logger.info("Testing request from user: {}", SecurityUtil.getCurrentUser());
         return "Hello";
     }
 }

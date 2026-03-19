@@ -1,10 +1,13 @@
 package com.loandemo.Loan.API.controller;
 
 import com.loandemo.Loan.API.service.EmailService;
+import com.loandemo.Loan.API.uitls.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +37,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("email")
 public class EmailVerificationController {
+
+    private final static Logger logger = LoggerFactory.getLogger(EmailVerificationController.class);
 
     private final EmailService emailService;
 
@@ -76,7 +81,14 @@ public class EmailVerificationController {
             @Parameter(description = "Username")
             @RequestParam("user") String username){
 
-        String result = emailService.verifyEmail(token, username);
-        return ResponseEntity.ok(result);
+        logger.info("Verification request for user: {}", username);
+        try{
+            String result = emailService.verifyEmail(token, username);
+            logger.info("Verification request proceed successfully for user: {}", username);
+            return ResponseEntity.ok(result);
+        }catch (RuntimeException e){
+            logger.error("Email verification failed for user: {}",username,e);
+            throw new RuntimeException("Email Verification Failed");
+        }
     }
 }

@@ -6,8 +6,11 @@ import com.loandemo.Loan.API.dto.register.UserRegistrationRequest;
 import com.loandemo.Loan.API.dto.register.UserRegistrationResponse;
 import com.loandemo.Loan.API.responseapi.APIResponse;
 import com.loandemo.Loan.API.service.AuthService;
+import com.loandemo.Loan.API.uitls.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +44,7 @@ import javax.validation.Valid;
 @RequestMapping("auth")
 public class AuthController {
 
+    private final static Logger logger = LoggerFactory.getLogger(AuthController.class);
     @Autowired
     private AuthService authService;
 
@@ -78,8 +82,15 @@ public class AuthController {
                     required = true
             )
             LoginRequestDto loginRequestDto) throws IllegalAccessException {
-
-        return authService.checkLogin(loginRequestDto);
+        logger.info("Received login request for user: {}", loginRequestDto.getUsername());
+        try{
+            ResponseEntity<APIResponse<LoginResponse>> apiResponseResponseEntity = authService.checkLogin(loginRequestDto);
+            logger.info("Login successfully for user: {}", loginRequestDto.getUsername());
+            return apiResponseResponseEntity;
+        }catch (Exception e){
+            logger.error("Failed login request for user: {}", loginRequestDto.getUsername(),e);
+            throw new IllegalAccessException("User is invalid");
+        }
     }
 
     /**
@@ -118,8 +129,15 @@ public class AuthController {
                     required = true
             )
             UserRegistrationRequest registrationRequest) throws Exception {
-
-        return authService.createUser(registrationRequest);
+        logger.info("Received user registration request from: {}", registrationRequest.getUsername());
+        try{
+            ResponseEntity<APIResponse<UserRegistrationResponse>> user = authService.createUser(registrationRequest);
+            logger.info("Proceed registration request successfully for user: {}",registrationRequest.getUsername() );
+            return user;
+        }catch (Exception e){
+            logger.error("User registration failed for user: {}", registrationRequest.getUsername(),e);
+            throw new RuntimeException("Type with different credential");
+        }
     }
 }
 

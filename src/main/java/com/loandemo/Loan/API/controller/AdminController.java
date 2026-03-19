@@ -3,9 +3,13 @@ package com.loandemo.Loan.API.controller;
 import com.loandemo.Loan.API.dto.user.UserResponse;
 import com.loandemo.Loan.API.responseapi.APIResponse;
 import com.loandemo.Loan.API.service.AdminService;
+import com.loandemo.Loan.API.uitls.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +40,10 @@ import java.util.List;
 @RestController
 @RequestMapping("admin")
 public class AdminController {
+    private final static Logger logger = LoggerFactory.getLogger(AdminController.class);
     private final AdminService adminService;
+
+    @Autowired
     public AdminController(AdminService adminService){
         this.adminService = adminService;
     }
@@ -64,7 +71,10 @@ public class AdminController {
     @GetMapping("all/users")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<APIResponse<List<UserResponse>>> getAllUserList(){
+        logger.info("Request to retrieve all user form admin: {}", SecurityUtil.getCurrentUser());
         List<UserResponse> userResponseList = adminService.getAllUsers();
+        logger.info("Retrieve all user successfully for admin: {}", SecurityUtil.getCurrentUser());
         return ResponseEntity.ok(APIResponse.success(userResponseList,"All user"));
+
     }
 }

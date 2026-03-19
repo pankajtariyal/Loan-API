@@ -63,7 +63,7 @@ public class AdminService {
     public List<UserResponse> getAllUsers(){
         List<User> userList = userRepository.findAll();
 
-        List<UserResponse> responseList = userList.stream().map(user -> {
+        return userList.stream().map(user -> {
             return UserResponse.builder()
                     .id(user.getUserId())
                     .username(user.getUsername())
@@ -76,7 +76,5 @@ public class AdminService {
                     .updated_by(user.getUpdated_by())
                     .build();
         }).collect(Collectors.toList());
-
-        return responseList;
     }
 }

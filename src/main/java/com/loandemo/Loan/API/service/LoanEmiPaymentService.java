@@ -109,7 +109,6 @@ public class LoanEmiPaymentService {
      * @return list of transaction details
      */
     public List<ViewTransaction> getAllPaymentByLoanId(Long loanId){
-        List<ViewTransaction> loanPayments = loanPaymentRepository.findByLoanId(loanId);
-        return loanPayments;
+        return loanPaymentRepository.findByLoanId(loanId);
     }
 }

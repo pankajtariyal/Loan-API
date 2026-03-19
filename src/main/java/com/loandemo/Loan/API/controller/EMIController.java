@@ -8,11 +8,14 @@ import com.loandemo.Loan.API.responseapi.APIResponse;
 import com.loandemo.Loan.API.service.DocumentService;
 import com.loandemo.Loan.API.service.EMIService;
 import com.loandemo.Loan.API.service.LoanService;
+import com.loandemo.Loan.API.uitls.SecurityUtil;
 import com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,7 +48,7 @@ import java.util.List;
 @RestController
 @RequestMapping("loan/emi")
 public class EMIController {
-
+    private final static Logger logger = LoggerFactory.getLogger(EMIController.class);
     private final EMIService emiService;
 
     @Autowired
@@ -80,8 +83,9 @@ public class EMIController {
     @GetMapping("{id}/emi-schedule/get/all")
     public ResponseEntity<APIResponse<List<ViewEmi>>> getAllLoanEmi(
             @Parameter(description = "Loan ID") @PathVariable("id") Long id) {
-
+        logger.info("Request to fetch all Loan EMI of user: {}", SecurityUtil.getCurrentUser());
         List<ViewEmi> list = emiService.getAllEmiByLoanId(id);
+        logger.info("Proceed successfully to fetch all Loan EMI of user: {}", SecurityUtil.getCurrentUser());
         return ResponseEntity.ok(APIResponse.success(list));
     }
 
@@ -125,9 +129,15 @@ public class EMIController {
                     required = true
             )
             @RequestBody PayEmiRequest emiRequest) throws Exception {
-
-        PayEmiResponse response = emiService.payEmi(loanId, emiId, emiRequest);
-        return ResponseEntity.ok(APIResponse.success(response));
+        logger.info("EMI pay request for loan: {} from user {}",loanId,SecurityUtil.getCurrentUser());
+        try{
+            PayEmiResponse response = emiService.payEmi(loanId, emiId, emiRequest);
+            logger.info("EMI pay request proceed successfully for loan: {} from user {}",loanId,SecurityUtil.getCurrentUser());
+            return ResponseEntity.ok(APIResponse.success(response));
+        }catch (IllegalAccessException e){
+            logger.error("Emi payment failed of loan: {} from user: {}",loanId,SecurityUtil.getCurrentUser());
+            throw new IllegalArgumentException("Failed to pay emi");
+        }
     }
 }
 

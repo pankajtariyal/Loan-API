@@ -1,5 +1,6 @@
 package com.loandemo.Loan.API.controller;
 
+import ch.qos.logback.core.encoder.EchoEncoder;
 import com.loandemo.Loan.API.dto.loan.apply.LoanApplyRequest;
 import com.loandemo.Loan.API.dto.loan.apply.LoanApplyResponse;
 import com.loandemo.Loan.API.dto.loan.get.GetAllLoan;
@@ -8,10 +9,13 @@ import com.loandemo.Loan.API.dto.loan.get.GetLoanByUserResponse;
 import com.loandemo.Loan.API.responseapi.APIResponse;
 import com.loandemo.Loan.API.service.DocumentService;
 import com.loandemo.Loan.API.service.LoanService;
+import com.loandemo.Loan.API.uitls.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -50,6 +54,7 @@ import java.util.List;
 @RequestMapping("loans")
 public class LoanController {
 
+    private static final Logger logger = LoggerFactory.getLogger(LoanController.class);
     private final LoanService loanService;
     private final DocumentService documentService;
     public LoanController(LoanService loanService,DocumentService documentService){
@@ -87,8 +92,15 @@ public class LoanController {
                     description = "Loan request payload",
                     required = true
             ) LoanApplyRequest loanApplyRequest){
-        LoanApplyResponse response = loanService.applyLoan(loanApplyRequest);
-        return ResponseEntity.ok(APIResponse.success(response,"Loan Application Submitted Successfully"));
+        logger.info("Post request apply loan from user: {}", SecurityUtil.getCurrentUser());
+        try{
+            LoanApplyResponse response = loanService.applyLoan(loanApplyRequest);
+            logger.info("Post request apply loan proceed successfully from user: {}", SecurityUtil.getCurrentUser());
+            return ResponseEntity.ok(APIResponse.success(response,"Loan Application Submitted Successfully"));
+        }catch (Exception e){
+            logger.error("Failed to Apply loan from user: {}",SecurityUtil.getCurrentUser(),e);
+            throw new IllegalArgumentException("Failed to apply loan");
+        }
     }
 
 
@@ -115,7 +127,9 @@ public class LoanController {
     )
     @GetMapping("my")
     public ResponseEntity<APIResponse<GetLoanByUserResponse>> getLoans(){
+        logger.info("GET request, Retrieve all loan of user: {}",SecurityUtil.getCurrentUser());
         GetLoanByUserResponse response = loanService.getLoan();
+        logger.info("GET request, Retrieve all loan successfully of user: {}",SecurityUtil.getCurrentUser());
         return ResponseEntity.ok(APIResponse.success(response,"Loan List"));
     }
 
@@ -146,9 +160,15 @@ public class LoanController {
     @GetMapping("{id}")
     public ResponseEntity<APIResponse<GetLoanByIdResponse>> getLoanById(
             @Parameter(description = "Loan ID") @PathVariable Long id){
-
-        GetLoanByIdResponse getLoanByIdResponse = loanService.getLoanById(id);
-        return ResponseEntity.ok(APIResponse.success(getLoanByIdResponse,"Loan"));
+        logger.info("GET request, Retrieve loan by id: {} from admin: {}",id,SecurityUtil.getCurrentUser());
+        try{
+            GetLoanByIdResponse getLoanByIdResponse = loanService.getLoanById(id);
+            logger.info("GET request,Loan retrieve successfully by id: {} from admin: {}",id,SecurityUtil.getCurrentUser());
+            return ResponseEntity.ok(APIResponse.success(getLoanByIdResponse,"Loan"));
+        }catch (Exception e){
+            logger.error("Failed to retrieve loan by id: {} from admin: {}",id,SecurityUtil.getCurrentUser(),e);
+            throw new IllegalArgumentException("Failed to retrieve loan");
+        }
     }
 
     /**
@@ -172,7 +192,9 @@ public class LoanController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("get/all/loan")
     public ResponseEntity<APIResponse<List<GetAllLoan>>> getAllLoan(){
+        logger.info("GET request, Retrieve all loan from admin: {}",SecurityUtil.getCurrentUser());
         List<GetAllLoan> getAllLoans = loanService.getAllLoan();
+        logger.info("GET request, Retrieve all loan successfully from admin: {}",SecurityUtil.getCurrentUser());
         return ResponseEntity.ok(APIResponse.success(getAllLoans,"Loan"));
     }
 
@@ -216,8 +238,15 @@ public class LoanController {
         if(file.isEmpty()){
             throw new IllegalArgumentException("File is empty.");
         }
-        String response = documentService.uploadDocument(loanId,documentType,file);
-        return ResponseEntity.ok(APIResponse.success(response,"success"));
+        logger.info("POST request to upload document of loan id: {} from user: {}",loanId,SecurityUtil.getCurrentUser());
+        try{
+            String response = documentService.uploadDocument(loanId,documentType,file);
+            logger.info("Document uploaded successfully of loan id: {} from user: {}",loanId,SecurityUtil.getCurrentUser());
+            return ResponseEntity.ok(APIResponse.success(response,"success"));
+        }catch (Exception e){
+            logger.error("POST request failed of document upload of loan id: {} from user: {}",loanId,SecurityUtil.getCurrentUser());
+            throw new IllegalArgumentException("Failed to upload document");
+        }
     }
 
 }

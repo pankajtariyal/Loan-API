@@ -4,10 +4,13 @@ import com.loandemo.Loan.API.dto.document.LoanWithDocument;
 import com.loandemo.Loan.API.dto.document.VerifyDocumentRequest;
 import com.loandemo.Loan.API.responseapi.APIResponse;
 import com.loandemo.Loan.API.service.DocumentService;
+import com.loandemo.Loan.API.uitls.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,6 +47,8 @@ import java.util.List;
 @RequestMapping("loan/document")
 public class DocumentController {
 
+    private final static Logger logger = LoggerFactory.getLogger(DocumentController.class);
+
     private final DocumentService documentService;
 
     public DocumentController(DocumentService documentService){
@@ -76,7 +81,9 @@ public class DocumentController {
     @PreAuthorize(("hasRole('ADMIN')"))
     @GetMapping("all")
     public ResponseEntity<APIResponse<List<LoanWithDocument>>> getAllLoanWithDocument(){
+        logger.info("Request to fetch all loan with documents from admin: {}", SecurityUtil.getCurrentUser());
         List<LoanWithDocument> response = documentService.getAllDocument();
+        logger.info("Proceed successfully to fetch all loan with documents from admin: {}", SecurityUtil.getCurrentUser());
         return ResponseEntity.ok(APIResponse.success(response,"success"));
     }
 
@@ -111,9 +118,16 @@ public class DocumentController {
             @PathVariable("loanId") Long loanId,
 
             @Parameter(description = "Document ID")
-            @PathVariable("documentId") Long documentId){
-
-        return documentService.download(loanId, documentId);
+            @PathVariable("documentId") Long documentId) throws IllegalAccessException {
+        logger.info("Request to download documents for user: {}", SecurityUtil.getCurrentUser());
+        try{
+            ResponseEntity<Resource> download = documentService.download(loanId, documentId);
+            logger.info("Proceed to download documents for user: {}", SecurityUtil.getCurrentUser());
+            return download;
+        }catch (Exception e){
+            logger.error("Failed to download documents for user: {}", SecurityUtil.getCurrentUser(),e);
+            throw new IllegalAccessException("Error! Try again later.");
+        }
     }
 
     /**
@@ -155,8 +169,16 @@ public class DocumentController {
             )
             VerifyDocumentRequest documentRequest){
 
-        String result = documentService.verifyDocument(id, documentRequest);
-        return ResponseEntity.ok(APIResponse.success(result,"success"));
+        logger.info("Document Verification request from admin: {}",SecurityUtil.getCurrentUser());
+        try{
+            String result = documentService.verifyDocument(id, documentRequest);
+            ResponseEntity<APIResponse<String>> success = ResponseEntity.ok(APIResponse.success(result, "success"));
+            logger.info("Document Verification proceed successfully from admin: {}",SecurityUtil.getCurrentUser());
+            return success;
+        }catch (Exception e){
+            logger.error("Document Verification Failed from admin: {}",SecurityUtil.getCurrentUser());
+            throw new RuntimeException("Document verification failed.");
+        }
     }
 
 }

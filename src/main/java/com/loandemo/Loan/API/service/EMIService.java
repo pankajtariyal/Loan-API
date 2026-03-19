@@ -178,7 +178,7 @@ public class EMIService {
     public List<ViewEmi> getAllEmiByLoanId(long id){
         List<EMISchedule> emiList = emiRepository.findByLoanIdOrderByEmiNumber(id);
 
-        List<ViewEmi> viewEmiList = emiList.stream()
+        return emiList.stream()
                 .map(emi->{
                     return ViewEmi.builder()
                             .emiNumber(emi.getEmiNumber())
@@ -189,7 +189,6 @@ public class EMIService {
                             .status(emi.getStatus())
                             .build();
                 }).collect(Collectors.toList());
-        return viewEmiList;
     }
 
     /**

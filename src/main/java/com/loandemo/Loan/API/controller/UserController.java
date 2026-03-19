@@ -4,10 +4,14 @@ import com.loandemo.Loan.API.dto.update.PasswordUpdateByUserRequest;
 import com.loandemo.Loan.API.dto.user.UserResponse;
 import com.loandemo.Loan.API.responseapi.APIResponse;
 import com.loandemo.Loan.API.service.UserService;
+import com.loandemo.Loan.API.uitls.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -38,7 +42,7 @@ import javax.validation.Valid;
 @RestController
 @RequestMapping("user")
 public class UserController {
-
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
     private final UserService userService;
 
     public UserController(UserService userService){
@@ -79,9 +83,15 @@ public class UserController {
                     required = true
             )
             PasswordUpdateByUserRequest passwordUpdate){
-
-        String result = userService.updateUserPassword(passwordUpdate);
-        return ResponseEntity.ok(APIResponse.success(result));
+        logger.info("Password updated of user: {}", SecurityUtil.getCurrentUser());
+        try{
+            String result = userService.updateUserPassword(passwordUpdate);
+            logger.info("{} of user: {}",result, SecurityUtil.getCurrentUser());
+            return ResponseEntity.ok(APIResponse.success(result));
+        }catch (Exception e){
+            logger.error("Failed to update password of user: {}", SecurityUtil.getCurrentUser());
+            throw new IllegalArgumentException("User not found or invalid credential");
+        }
     }
 
     /**
@@ -110,7 +120,14 @@ public class UserController {
     @GetMapping("get/user")
     public ResponseEntity<APIResponse<UserResponse>> getUser(){
 
-        UserResponse userResponse = userService.getUser();
-        return ResponseEntity.ok(APIResponse.success(userResponse));
+        logger.info("Get user detail request of user: {}",SecurityUtil.getCurrentUser());
+        try{
+            UserResponse userResponse = userService.getUser();
+            logger.info("Get retrieve user detail of user: {}",SecurityUtil.getCurrentUser());
+            return ResponseEntity.ok(APIResponse.success(userResponse));
+        }catch (Exception e){
+            logger.error("Failed to get user detail of user: {}",SecurityUtil.getCurrentUser(),e);
+            throw new UsernameNotFoundException("User not found");
+        }
     }
 }
